@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'PSTImprovedCollectionView'
-  s.version = "--no-publish"
+  s.version = "2.0.2"
   s.summary = 'Open source replacement UICollectionView forked from steipete/PSTCollectionView, with some additional features. '
   s.author = {'Bao Lei' => 'bao.lei@me.com'}
   s.homepage = "https://github.com/ba01ei/PSTImprovedCollectionView"
@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   }
   s.source = {
     :git => 'https://github.com/ba01ei/PSTImprovedCollectionView.git',
-    :tag => "--no-publish" }
+    :tag => "2.0.2" }
   }
   s.platform = :ios, '4.3'
   s.source_files = 'PSTCollectionView/'
