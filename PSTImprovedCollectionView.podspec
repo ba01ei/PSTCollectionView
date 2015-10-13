@@ -11,7 +11,6 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://github.com/ba01ei/PSTImprovedCollectionView.git',
     :tag => "2.0.1" }
-  }
   s.platform = :ios, '4.3'
   s.source_files = 'PSTCollectionView/'
   s.frameworks = 'UIKit', 'QuartzCore'
