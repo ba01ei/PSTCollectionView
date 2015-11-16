@@ -276,10 +276,14 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 - (void)setFrame:(CGRect)frame {
     if (!CGRectEqualToRect(frame, self.frame)) {
         CGRect bounds = (CGRect){.origin=self.contentOffset, .size=frame.size};
+        PSTCollectionViewLayoutInvalidationContext *context = nil;
         BOOL shouldInvalidate = [self.collectionViewLayout shouldInvalidateLayoutForBoundsChange:bounds];
+        if (shouldInvalidate) {
+            context =[self.collectionViewLayout invalidationContextForBoundsChange:bounds];
+        }
         [super setFrame:frame];
         if (shouldInvalidate) {
-            [self invalidateLayout];
+            [self invalidateLayoutWithContext:context];
             _collectionViewFlags.fadeCellsForBoundsChange = YES;
         }
     }
@@ -287,10 +291,14 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 
 - (void)setBounds:(CGRect)bounds {
     if (!CGRectEqualToRect(bounds, self.bounds)) {
+        PSTCollectionViewLayoutInvalidationContext *context = nil;
         BOOL shouldInvalidate = [self.collectionViewLayout shouldInvalidateLayoutForBoundsChange:bounds];
+        if (shouldInvalidate) {
+            context =[self.collectionViewLayout invalidationContextForBoundsChange:bounds];
+        }
         [super setBounds:bounds];
         if (shouldInvalidate) {
-            [self invalidateLayout];
+            [self invalidateLayoutWithContext:context];
             _collectionViewFlags.fadeCellsForBoundsChange = YES;
         }
     }
@@ -591,7 +599,12 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 
 - (void)reloadData {
     if (_reloadingSuspendedCount != 0) return;
-    [self invalidateLayout];
+    
+    PSTCollectionViewLayoutInvalidationContext *context = [[[[self.collectionViewLayout class] invalidationContextClass] alloc] init];
+    context.invalidateDataSourceCounts = YES;
+    context.invalidateEverything = YES;
+    [self invalidateLayoutWithContext:context];
+    
     [_allVisibleViewsDict enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         if ([obj isKindOfClass:[PSTCollectionViewCell class]]) {
             [self reuseCell:(PSTCollectionViewCell*)obj];
@@ -1394,6 +1407,17 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 - (void)invalidateLayout {
     [self.collectionViewLayout invalidateLayout];
     [self.collectionViewData invalidate]; // invalidate layout cache
+}
+
+- (void)invalidateLayoutWithContext:(PSTCollectionViewLayoutInvalidationContext *)context{
+    
+    if ([self.collectionViewLayout respondsToSelector:@selector(invalidateLayoutWithContext:)]){
+        [self.collectionViewLayout invalidateLayoutWithContext:context];
+    } else {
+        [self.collectionViewLayout invalidateLayout];
+    }
+
+    [self.collectionViewData invalidateWithContext:context];
 }
 
 // update currently visible cells, fetches new cells if needed

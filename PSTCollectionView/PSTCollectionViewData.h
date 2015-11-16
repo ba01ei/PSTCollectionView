@@ -7,7 +7,7 @@
 
 #import "PSTCollectionViewCommon.h"
 
-@class PSTCollectionView, PSTCollectionViewLayout, PSTCollectionViewLayoutAttributes;
+@class PSTCollectionView, PSTCollectionViewLayout, PSTCollectionViewLayoutAttributes, PSTCollectionViewLayoutInvalidationContext;
 
 // https://github.com/steipete/iOS6-Runtime-Headers/blob/master/UICollectionViewData.h
 @interface PSTCollectionViewData : NSObject
@@ -45,6 +45,7 @@
 
 // Make data to re-evaluate dataSources.
 - (void)invalidate;
+- (void)invalidateWithContext:(PSTCollectionViewLayoutInvalidationContext *)invalidationContext;
 
 // Access cached item data
 - (NSInteger)numberOfItemsBeforeSection:(NSInteger)section;
