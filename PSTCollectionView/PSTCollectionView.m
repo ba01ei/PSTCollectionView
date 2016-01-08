@@ -97,6 +97,7 @@ CGFloat PSTSimulatorAnimationDragCoefficient(void);
         unsigned int delegateSupportsMenus : 1;
         unsigned int delegateDidEndDisplayingCell : 1;
         unsigned int delegateDidEndDisplayingSupplementaryView : 1;
+        unsigned int delegateWillDisplayCell : 1;
         unsigned int dataSourceNumberOfSections : 1;
         unsigned int dataSourceViewForSupplementaryElement : 1;
         unsigned int reloadSkippedDuringSuspension : 1;
@@ -1342,6 +1343,8 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
     _collectionViewFlags.delegateDidEndDisplayingCell = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:didEndDisplayingCell:forItemAtIndexPath:)];
     _collectionViewFlags.delegateDidEndDisplayingSupplementaryView = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:didEndDisplayingSupplementaryView:forElementOfKind:atIndexPath:)];
 
+    _collectionViewFlags.delegateWillDisplayCell = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:willDisplayCell:forItemAtIndexPath:)];
+
     //  Managing Actions for Cells
     _collectionViewFlags.delegateSupportsMenus = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:shouldShowMenuForItemAtIndexPath:)];
 
@@ -1423,7 +1426,7 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 // update currently visible cells, fetches new cells if needed
 // TODO: use now parameter.
 - (void)updateVisibleCellsNow:(BOOL)now {
-    NSArray *layoutAttributesArray = [_collectionViewData layoutAttributesForElementsInRect:self.bounds];
+    NSArray *layoutAttributesArray = [_collectionViewData layoutAttributesForElementsInRect:self.visibleBoundRects];
 
     if (layoutAttributesArray == nil || layoutAttributesArray.count == 0) {
         // If our layout source isn't providing any layout information, we should just
@@ -1461,6 +1464,11 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
                 // Always apply attributes. Fixes #203.
                 [view applyLayoutAttributes:layoutAttributes];
             }
+
+            if (_collectionViewFlags.delegateWillDisplayCell && itemKey.type == PSTCollectionViewItemTypeCell) {
+                [self.delegate collectionView:self willDisplayCell:(PSTCollectionViewCell *)view forItemAtIndexPath:layoutAttributes.indexPath];
+            }
+            
         }else {
             // just update cell
             [view applyLayoutAttributes:layoutAttributes];

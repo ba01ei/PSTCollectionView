@@ -62,6 +62,8 @@
 
 - (void)collectionView:(PSTCollectionView *)collectionView didEndDisplayingSupplementaryView:(PSTCollectionReusableView *)view forElementOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath;
 
+- (void)collectionView:(PSTCollectionView *)collectionView willDisplayCell:(PSTCollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath;
+
 // These methods provide support for copy/paste actions on cells.
 // All three should be implemented if any are.
 - (BOOL)collectionView:(PSTCollectionView *)collectionView shouldShowMenuForItemAtIndexPath:(NSIndexPath *)indexPath;
