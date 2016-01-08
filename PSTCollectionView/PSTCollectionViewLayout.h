@@ -15,6 +15,30 @@ typedef NS_ENUM(NSUInteger, PSTCollectionViewItemType) {
     PSTCollectionViewItemTypeDecorationView
 };
 
+@interface PSTCollectionViewLayoutInvalidationContext : NSObject
+
+@property (nonatomic, readonly) BOOL invalidateEverything; // set to YES when invalidation occurs because the collection view is sent -reloadData
+@property (nonatomic, readonly) BOOL invalidateDataSourceCounts; // if YES, the layout should requery section and item counts from the collection view - set to YES when the collection view is sent -reloadData and when items are inserted or deleted
+
+- (void)invalidateItemsAtIndexPaths:(NSArray *)indexPaths;
+- (void)invalidateSupplementaryElementsOfKind:(NSString *)elementKind atIndexPaths:(NSArray *)indexPaths;
+- (void)invalidateDecorationElementsOfKind:(NSString *)elementKind atIndexPaths:(NSArray *)indexPaths;
+
+@property (nonatomic, readonly) NSArray *invalidatedItemIndexPaths;
+@property (nonatomic, readonly) NSDictionary *invalidatedSupplementaryIndexPaths; // keys are element kind strings - values are NSArrays of NSIndexPaths
+@property (nonatomic, readonly) NSDictionary *invalidatedDecorationIndexPaths; // keys are element kind strings - values are NSArrays of NSIndexPaths
+
+@property (nonatomic) CGPoint contentOffsetAdjustment; // delta to be applied to the collection view's current contentOffset - default is CGPointZero
+@property (nonatomic) CGSize contentSizeAdjustment; // delta to be applied to the current content size - default is CGSizeZero
+
+// Reordering support
+@property (nonatomic, readonly, copy) NSArray *previousIndexPathsForInteractivelyMovingItems; // index paths of moving items prior to the invalidation
+@property (nonatomic, readonly, copy) NSArray *targetIndexPathsForInteractivelyMovingItems; // index paths of moved items following the invalidation
+@property (nonatomic, readonly) CGPoint interactiveMovementTarget;
+
+@end
+
+
 // The PSTCollectionViewLayout class is provided as an abstract class for subclassing to define custom collection layouts.
 // Defining a custom layout is an advanced operation intended for applications with complex needs.
 @class PSTCollectionViewLayoutAttributes, PSTCollectionView;
@@ -63,6 +87,7 @@ typedef NS_ENUM(NSUInteger, PSTCollectionViewItemType) {
 // Call -invalidateLayout to indicate that the collection view needs to requery the layout information.
 // Subclasses must always call super if they override.
 - (void)invalidateLayout;
+- (void)invalidateLayoutWithContext:(PSTCollectionViewLayoutInvalidationContext *)invalidationContext;
 
 /// @name Registering Decoration Views
 - (void)registerClass:(Class)viewClass forDecorationViewOfKind:(NSString *)kind;
@@ -75,6 +100,7 @@ typedef NS_ENUM(NSUInteger, PSTCollectionViewItemType) {
 @interface PSTCollectionViewLayout (SubclassingHooks)
 
 + (Class)layoutAttributesClass; // override this method to provide a custom class to be used when instantiating instances of PSTCollectionViewLayoutAttributes
++ (Class)invalidationContextClass;
 
 // The collection view calls -prepareLayout once at its first layout as the first message to the layout instance.
 // The collection view calls -prepareLayout again after layout is invalidated and before requerying the layout information.
@@ -93,6 +119,8 @@ typedef NS_ENUM(NSUInteger, PSTCollectionViewItemType) {
 - (PSTCollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath;
 
 - (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds; // return YES to cause the collection view to requery the layout for geometry information
+- (PSTCollectionViewLayoutInvalidationContext *)invalidationContextForBoundsChange:(CGRect)newBounds;
+
 - (CGPoint)targetContentOffsetForProposedContentOffset:(CGPoint)proposedContentOffset withScrollingVelocity:(CGPoint)velocity; // return a point at which to rest after scrolling - for layouts that want snap-to-point scrolling behavior
 
 - (CGSize)collectionViewContentSize; // the collection view calls this to update its content size any time it queries new layout information - at least one of the width and height fields must match the respective field of the collection view's bounds

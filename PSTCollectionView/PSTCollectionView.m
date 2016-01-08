@@ -97,6 +97,7 @@ CGFloat PSTSimulatorAnimationDragCoefficient(void);
         unsigned int delegateSupportsMenus : 1;
         unsigned int delegateDidEndDisplayingCell : 1;
         unsigned int delegateDidEndDisplayingSupplementaryView : 1;
+        unsigned int delegateWillDisplayCell : 1;
         unsigned int dataSourceNumberOfSections : 1;
         unsigned int dataSourceViewForSupplementaryElement : 1;
         unsigned int reloadSkippedDuringSuspension : 1;
@@ -276,10 +277,14 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 - (void)setFrame:(CGRect)frame {
     if (!CGRectEqualToRect(frame, self.frame)) {
         CGRect bounds = (CGRect){.origin=self.contentOffset, .size=frame.size};
+        PSTCollectionViewLayoutInvalidationContext *context = nil;
         BOOL shouldInvalidate = [self.collectionViewLayout shouldInvalidateLayoutForBoundsChange:bounds];
+        if (shouldInvalidate) {
+            context =[self.collectionViewLayout invalidationContextForBoundsChange:bounds];
+        }
         [super setFrame:frame];
         if (shouldInvalidate) {
-            [self invalidateLayout];
+            [self invalidateLayoutWithContext:context];
             _collectionViewFlags.fadeCellsForBoundsChange = YES;
         }
     }
@@ -287,10 +292,14 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 
 - (void)setBounds:(CGRect)bounds {
     if (!CGRectEqualToRect(bounds, self.bounds)) {
+        PSTCollectionViewLayoutInvalidationContext *context = nil;
         BOOL shouldInvalidate = [self.collectionViewLayout shouldInvalidateLayoutForBoundsChange:bounds];
+        if (shouldInvalidate) {
+            context =[self.collectionViewLayout invalidationContextForBoundsChange:bounds];
+        }
         [super setBounds:bounds];
         if (shouldInvalidate) {
-            [self invalidateLayout];
+            [self invalidateLayoutWithContext:context];
             _collectionViewFlags.fadeCellsForBoundsChange = YES;
         }
     }
@@ -591,7 +600,12 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 
 - (void)reloadData {
     if (_reloadingSuspendedCount != 0) return;
-    [self invalidateLayout];
+    
+    PSTCollectionViewLayoutInvalidationContext *context = [[[[self.collectionViewLayout class] invalidationContextClass] alloc] init];
+    context.invalidateDataSourceCounts = YES;
+    context.invalidateEverything = YES;
+    [self invalidateLayoutWithContext:context];
+    
     [_allVisibleViewsDict enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         if ([obj isKindOfClass:[PSTCollectionViewCell class]]) {
             [self reuseCell:(PSTCollectionViewCell*)obj];
@@ -1329,6 +1343,8 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
     _collectionViewFlags.delegateDidEndDisplayingCell = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:didEndDisplayingCell:forItemAtIndexPath:)];
     _collectionViewFlags.delegateDidEndDisplayingSupplementaryView = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:didEndDisplayingSupplementaryView:forElementOfKind:atIndexPath:)];
 
+    _collectionViewFlags.delegateWillDisplayCell = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:willDisplayCell:forItemAtIndexPath:)];
+
     //  Managing Actions for Cells
     _collectionViewFlags.delegateSupportsMenus = (unsigned int)[self.delegate respondsToSelector:@selector(collectionView:shouldShowMenuForItemAtIndexPath:)];
 
@@ -1396,10 +1412,21 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
     [self.collectionViewData invalidate]; // invalidate layout cache
 }
 
+- (void)invalidateLayoutWithContext:(PSTCollectionViewLayoutInvalidationContext *)context{
+    
+    if ([self.collectionViewLayout respondsToSelector:@selector(invalidateLayoutWithContext:)]){
+        [self.collectionViewLayout invalidateLayoutWithContext:context];
+    } else {
+        [self.collectionViewLayout invalidateLayout];
+    }
+
+    [self.collectionViewData invalidateWithContext:context];
+}
+
 // update currently visible cells, fetches new cells if needed
 // TODO: use now parameter.
 - (void)updateVisibleCellsNow:(BOOL)now {
-    NSArray *layoutAttributesArray = [_collectionViewData layoutAttributesForElementsInRect:self.bounds];
+    NSArray *layoutAttributesArray = [_collectionViewData layoutAttributesForElementsInRect:self.visibleBoundRects];
 
     if (layoutAttributesArray == nil || layoutAttributesArray.count == 0) {
         // If our layout source isn't providing any layout information, we should just
@@ -1437,6 +1464,11 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
                 // Always apply attributes. Fixes #203.
                 [view applyLayoutAttributes:layoutAttributes];
             }
+
+            if (_collectionViewFlags.delegateWillDisplayCell && itemKey.type == PSTCollectionViewItemTypeCell) {
+                [self.delegate collectionView:self willDisplayCell:(PSTCollectionViewCell *)view forItemAtIndexPath:layoutAttributes.indexPath];
+            }
+            
         }else {
             // just update cell
             [view applyLayoutAttributes:layoutAttributes];

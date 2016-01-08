@@ -8,8 +8,83 @@
 #import "PSTCollectionView.h"
 #import "PSTCollectionViewItemKey.h"
 #import "PSTCollectionViewData.h"
-
+#import "PSTCollectionViewLayout+Internals.h"
 #import <objc/runtime.h>
+
+@interface PSTCollectionViewLayoutInvalidationContext(){
+
+    NSMutableArray *invalidatedItems;
+    NSMutableDictionary *invalidatedSupplementaryElementsOfKind;
+    NSMutableDictionary *invalidateDecorationElementsOfKind;
+}
+@end
+
+@implementation PSTCollectionViewLayoutInvalidationContext
+
+- (void)invalidateItemsAtIndexPaths:(NSArray *)indexPaths{
+    
+    if (indexPaths) {
+        if (invalidatedItems == nil) {
+            invalidatedItems = [[NSMutableArray alloc] init];
+        }
+        
+        [invalidatedItems addObjectsFromArray:indexPaths];
+    }
+}
+
+- (void)invalidateSupplementaryElementsOfKind:(NSString *)elementKind atIndexPaths:(NSArray *)indexPaths{
+
+    if (indexPaths && elementKind) {
+        if (invalidatedSupplementaryElementsOfKind == nil) {
+            invalidatedSupplementaryElementsOfKind = [[NSMutableDictionary alloc] init];
+        }
+        
+        NSMutableArray *elements = invalidatedSupplementaryElementsOfKind[elementKind];
+        if (elements == nil) {
+            invalidatedSupplementaryElementsOfKind[elementKind] = elements = [[NSMutableArray alloc] init];
+        }
+        
+        [elements addObjectsFromArray:indexPaths];
+    }
+}
+
+- (void)invalidateDecorationElementsOfKind:(NSString *)elementKind atIndexPaths:(NSArray *)indexPaths{
+    
+    if (indexPaths && elementKind) {
+        if (invalidateDecorationElementsOfKind == nil) {
+            invalidateDecorationElementsOfKind = [[NSMutableDictionary alloc] init];
+        }
+        
+        NSMutableArray *elements = invalidateDecorationElementsOfKind[elementKind];
+        if (elements == nil) {
+            invalidateDecorationElementsOfKind[elementKind] = elements = [[NSMutableArray alloc] init];
+        }
+        
+        [elements addObjectsFromArray:indexPaths];
+    }
+}
+
+- (NSArray *)invalidatedItemIndexPaths{
+    return [invalidatedItems copy];
+}
+
+- (NSDictionary *)invalidatedDecorationIndexPaths{
+    return [invalidateDecorationElementsOfKind copy];
+}
+
+- (NSDictionary *)invalidatedSupplementaryIndexPaths{
+    return [invalidatedSupplementaryElementsOfKind copy];
+}
+
+- (void)setInvalidateEverything:(BOOL)invalidateEverything{
+    _invalidateEverything = invalidateEverything;
+}
+
+- (void)setInvalidateDataSourceCounts:(BOOL)invalidateDataSourceCounts{
+    _invalidateDataSourceCounts = invalidateDataSourceCounts;
+}
+
+@end
 
 @interface PSTCollectionView ()
 - (id)currentUpdate;
@@ -240,11 +315,20 @@
     }
 }
 
++ (Class)invalidationContextClass{
+    return [PSTCollectionViewLayoutInvalidationContext class];
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Invalidating the Layout
 
 - (void)invalidateLayout {
-    [[_collectionView collectionViewData] invalidate];
+    [_collectionView setNeedsLayout];
+}
+
+- (void)invalidateLayoutWithContext:(PSTCollectionViewLayoutInvalidationContext *)invalidationContext{
+    
+    [[_collectionView collectionViewData] invalidateWithContext:invalidationContext];
     [_collectionView setNeedsLayout];
 }
 
@@ -254,6 +338,17 @@
         return YES;
     }
     return NO;
+}
+
+- (PSTCollectionViewLayoutInvalidationContext *)invalidationContextForBoundsChange:(CGRect)newBounds{
+    PSTCollectionViewLayoutInvalidationContext *context = [[[[self class] invalidationContextClass] alloc] init];
+    
+    CGRect oldBounds = self.collectionView.bounds;
+    CGFloat widthAdjustment = newBounds.size.width - oldBounds.size.width;
+    CGFloat heightAdjustment = newBounds.size.height - oldBounds.size.height;
+    context.contentSizeAdjustment = CGSizeMake(widthAdjustment, heightAdjustment);
+    return context;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

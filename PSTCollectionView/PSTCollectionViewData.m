@@ -7,6 +7,7 @@
 
 #import "PSTCollectionViewData.h"
 #import "PSTCollectionView.h"
+#import "PSTCollectionViewLayout.h"
 
 @interface PSTCollectionViewData () {
     CGRect _validLayoutRect;
@@ -74,6 +75,16 @@
 
 - (void)invalidate {
     _collectionViewDataFlags.itemCountsAreValid = NO;
+    _collectionViewDataFlags.layoutIsPrepared = NO;
+    _validLayoutRect = CGRectNull;  // don't set CGRectZero in case of _contentSize=CGSizeZero
+}
+
+- (void)invalidateWithContext:(PSTCollectionViewLayoutInvalidationContext *)invalidationContext{
+    
+    if (_collectionViewDataFlags.itemCountsAreValid == YES) {
+        _collectionViewDataFlags.itemCountsAreValid = !invalidationContext.invalidateDataSourceCounts && !invalidationContext.invalidateEverything;
+    }
+    
     _collectionViewDataFlags.layoutIsPrepared = NO;
     _validLayoutRect = CGRectNull;  // don't set CGRectZero in case of _contentSize=CGSizeZero
 }

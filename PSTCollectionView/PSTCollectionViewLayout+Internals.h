@@ -16,3 +16,10 @@
 @property (nonatomic, copy, readonly) NSDictionary *decorationViewExternalObjectsTables;
 
 @end
+
+
+@interface PSTCollectionViewLayoutInvalidationContext (Internals)
+@property (nonatomic, assign, readwrite) BOOL invalidateEverything; // set to YES when invalidation occurs because the collection view is sent -reloadData
+@property (nonatomic, assign, readwrite) BOOL invalidateDataSourceCounts; // if YES, the layout should requery
+@end
+
