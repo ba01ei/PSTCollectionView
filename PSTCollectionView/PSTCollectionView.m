@@ -300,6 +300,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewDidScroll:)]) {
         [delegate scrollViewDidScroll:scrollView];
@@ -307,6 +310,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewDidZoom:(UIScrollView *)scrollView {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewDidZoom:)]) {
         [delegate scrollViewDidZoom:scrollView];
@@ -314,6 +320,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewWillBeginDragging:)]) {
         [delegate scrollViewWillBeginDragging:scrollView];
@@ -321,6 +330,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset {
+    if (!self.superview || !self.window) {
+        return;
+    }
     // Let collectionViewLayout decide where to stop.
     *targetContentOffset = [[self collectionViewLayout] targetContentOffsetForProposedContentOffset:*targetContentOffset withScrollingVelocity:velocity];
 
@@ -332,6 +344,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewDidEndDragging:willDecelerate:)]) {
         [delegate scrollViewDidEndDragging:scrollView willDecelerate:decelerate];
@@ -344,6 +359,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewWillBeginDecelerating:(UIScrollView *)scrollView {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewWillBeginDecelerating:)]) {
         [delegate scrollViewWillBeginDecelerating:scrollView];
@@ -351,6 +369,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewDidEndDecelerating:)]) {
         [delegate scrollViewDidEndDecelerating:scrollView];
@@ -358,6 +379,9 @@ static void PSTCollectionViewCommonSetup(PSTCollectionView *_self) {
 }
 
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
+    if (!self.superview || !self.window) {
+        return;
+    }
     id<PSTCollectionViewDelegate> delegate = self.extVars.collectionViewDelegate;
     if ((id)delegate != self && [delegate respondsToSelector:@selector(scrollViewDidEndScrollingAnimation:)]) {
         [delegate scrollViewDidEndScrollingAnimation:scrollView];
